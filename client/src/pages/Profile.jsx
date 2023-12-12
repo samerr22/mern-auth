@@ -8,7 +8,14 @@ import {
 } from "firebase/storage";
 import { app } from "../firebase";
 
-import { updateUserSuccess,updateUserFailure, updateUserStart } from "../redux/user/userSlice";
+import {
+  updateUserSuccess,
+  updateUserFailure,
+  updateUserStart,
+  deleteUserFailure,
+  deleteUserStart,
+  deleteUserSuccess,
+} from "../redux/user/userSlice";
 
 export default function profile() {
   const dispatch = useDispatch();
@@ -49,32 +56,50 @@ export default function profile() {
   };
 
   const hadleChange = (e) => {
-    setFormData({...formData, [e.target.id]: e.target.value});
-  }
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       dispatch(updateUserStart());
-      const res = await fetch (`/api/user/update/${currentUser._id}`, {
-        method: 'POST',
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "POST",
         headers: {
-          'Content-Type' : 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
       const data = await res.json();
-      if(data.success == false){
+      if (data.success == false) {
         dispatch(updateUserFailure(data));
         return;
       }
       dispatch(updateUserSuccess(data));
       setUpdateSuccess(true);
-
     } catch (error) {
       dispatch(updateUserFailure(error));
+    }
+  };
+
+  const handleDeleteaccount = async () =>  {
+    try {
+      dispatch(deleteUserStart());
+      const res = await fetch ( `/api/user/delete/${currentUser._id}`,{
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      dispatch(deleteUserFailure(data));
+      if(data.success === false){
+        return;
+      }
+      dispatch(deleteUserSuccess(data))
+      
+    } catch (error) {
+      dispatch(deleteUserFailure(error))
       
     }
   }
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
@@ -100,7 +125,9 @@ export default function profile() {
         />
         <p className="text-sm self-center ">
           {imageError ? (
-            <span className="text-red-700">Error uploading image (file size must be less than 2 MB)</span>
+            <span className="text-red-700">
+              Error uploading image (file size must be less than 2 MB)
+            </span>
           ) : imagePercent > 0 && imagePercent < 100 ? (
             <span>{`Uploading: ${imagePercent} %`}</span>
           ) : imagePercent === 100 ? (
@@ -136,15 +163,17 @@ export default function profile() {
           className="bg-slate-700 text-white p-3
         rounded-lg uppercase hover:opacity-95 disabled:opacity-80"
         >
-        {loading ? 'Loading...' : 'Update'}
+          {loading ? "Loading..." : "Update"}
         </button>
       </form>
       <div className="flex justify-between mt-4">
-        <span className="text-red-700 cursor-pointer">Delete Accoount</span>
+        <span onClick={handleDeleteaccount} className="text-red-700 cursor-pointer">Delete Accoount</span>
         <span className="text-red-700 cursor-pointer">Sign Out</span>
       </div>
-      <p className="text-red-700 mt-5">{ error && "something went wrong"}</p>
-      <p className="text-green-700 mt-5">{ updateSuccess && "User is updated succeessfully"}</p>
+      <p className="text-red-700 mt-5">{error && "something went wrong"}</p>
+      <p className="text-green-700 mt-5">
+        {updateSuccess && "User is updated succeessfully"}
+      </p>
     </div>
   );
 }
